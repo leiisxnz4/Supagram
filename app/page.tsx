@@ -100,7 +100,7 @@ export default function Home() {
         .from('posts')
         .select('*')
         //.gte('likes', 50)
-        .order('likes', { ascending: false })
+        .order('created_at', { ascending: false })
         .range(0, 11)
         
         if (posts) {
