@@ -1,17 +1,15 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import { getTimeAgo } from "./utils/time";
-import { posts as initialPosts, type Post } from "./mocks/posts";
-import { supabase } from "./utils/supabase";
-import PostCard from "./components/PostCard";
-
-
-
+import { Post as initialPosts, type Post } from "./mocks/posts";
+import { supabase } from "./lib/supabase";
+import PostCard from "./components/PostCard"; 
 
 
 export default function Home() {
+
+  const [posts, setPosts] = useState<Post[]>([]);
 
     useEffect(() => {
       async function getPosts() {
@@ -31,7 +29,6 @@ export default function Home() {
       getPosts()
     }, [])
 
-  const [posts, setPosts] = useState<Post[]>(initialPosts);
 
   const handleLike = (postId: number | string) => {
     setPosts((prevPosts) =>

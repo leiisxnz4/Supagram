@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { getTimeAgo } from "../utils/time";
 
 import type { Post } from "../mocks/posts";
-import { supabase } from "../utils/supabase";
+import { supabase } from "../lib/supabase";
 import Modal from "../components/Modal";
 
 function HeartIcon() {
