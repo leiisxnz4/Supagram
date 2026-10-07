@@ -40,7 +40,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Suplatzigram
+            Supagram
           </h1>
           <p className="text-foreground/60 mt-2">Inicia sesión en tu cuenta</p>
         </div>
