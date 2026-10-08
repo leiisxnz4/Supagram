@@ -3,10 +3,10 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { getTimeAgo } from "../utils/time";
-
 import type { Post } from "../mocks/posts";
 import { supabase } from "../lib/supabase";
 import Modal from "../components/Modal";
+import BottomNav from "../components/BottomNav";
 
 function HeartIcon() {
   return (
@@ -21,33 +21,42 @@ function HeartIcon() {
   );
 }
 
-
-
 export default function RankPage() {
   const [posts, setPosts] = useState<Post[]>([]);
-  
+
   useEffect(() => {
     async function getPosts() {
-      const { data: posts } = await supabase
-      .from('posts')
-      .select('*')
-      .gte('likes', 50)
-      .order('likes', { ascending: false })
-      //.range(0, 11)
-      
-      if (posts) {
-        setPosts(posts)
-        console.log(posts)
+      const { data } = await supabase
+       .from('posts')
+       .select('*')
+       .order('likes', { ascending: false })
+       // quité el gte(50) porque si no tienes posts con 50 likes no te muestra nada
+       .limit(21);
+
+      if (data) {
+        // Mapeamos a tu tipo Post del mock para que no truene el Modal
+        const mapped = data.map((p: any) => ({
+          id: p.id,
+          image_url: p.image_url,
+          caption: p.caption,
+          likes: p.likes ?? 0,
+          created_at: p.created_at,
+          user_id: p.user_id,
+          user: {
+            username: "leii",
+            avatar: ""
+          }
+        })) as unknown as Post[];
+        setPosts(mapped);
       }
     }
-    
-    getPosts()
-  }, [])
-  
+    getPosts();
+  }, []);
+
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-card-bg border-b border-border">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-center">
@@ -59,35 +68,38 @@ export default function RankPage() {
 
       {/* Grid de posts */}
       <main className="max-w-2xl mx-auto p-2">
-        <div className="grid grid-cols-3 gap-1">
-          {[...posts].sort((a, b) => b.likes - a.likes).map((post) => (
-            <button
-              key={post.id}
-              onClick={() => setSelectedPost(post)}
-              className="relative aspect-square overflow-hidden group"
-            >
-              <Image
-                src={post.image_url}
-                alt={`Post con ${post.likes} likes`}
-                fill
-                className="object-cover transition-transform group-hover:scale-105"
-              />
-              {/* Overlay con likes al hover */}
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
-                <HeartIcon />
-                <span className="text-white font-semibold">
-                  {post.likes.toLocaleString()}
-                </span>
-              </div>
-            </button>
-          ))}
-        </div>
+        {posts.length === 0? (
+          <p className="text-center opacity-60 mt-10">Aún no hay posts en ranking, ¡dale like!</p>
+        ) : (
+          <div className="grid grid-cols-3 gap-1">
+            {posts.map((post) => (
+              <button
+                key={post.id}
+                onClick={() => setSelectedPost(post)}
+                className="relative aspect-square overflow-hidden group"
+              >
+                <Image
+                  src={post.image_url}
+                  alt={`Post con ${post.likes} likes`}
+                  fill
+                  className="object-cover transition-transform group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                  <HeartIcon />
+                  <span className="text-white font-semibold">
+                    {post.likes.toLocaleString()}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </main>
 
-      {/* Modal */}
       {selectedPost && (
         <Modal post={selectedPost} onClose={() => setSelectedPost(null)} />
       )}
+      <BottomNav />
     </div>
   );
 }

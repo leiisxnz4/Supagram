@@ -1,5 +1,4 @@
 "use client";
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -34,6 +33,21 @@ function RankIcon({ active }: { active: boolean }) {
   );
 }
 
+function ProfileIcon({ active }: { active: boolean }) {
+  if (active) {
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+        <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clipRule="evenodd" />
+      </svg>
+    );
+  }
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+    </svg>
+  );
+}
+
 function PlusIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
@@ -44,35 +58,26 @@ function PlusIcon() {
 
 export default function BottomNav() {
   const pathname = usePathname();
-
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card-bg border-t border-border">
       <div className="max-w-lg mx-auto flex items-center justify-around py-2">
-        <Link
-          href="/"
-          className={`flex flex-col items-center gap-1 px-4 py-2 transition-colors ${
-            pathname === "/" ? "text-primary" : "text-foreground/60 hover:text-foreground"
-          }`}
-        >
+        <Link href="/" className={`flex flex-col items-center gap-1 px-3 py-2 ${pathname === "/" ? "text-primary" : "text-foreground/60"}`}>
           <HomeIcon active={pathname === "/"} />
-          <span className="text-xs font-medium">Home</span>
+          <span className="text-xs">Home</span>
         </Link>
 
-        <Link
-          href="/post"
-          className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-primary to-accent text-white shadow-lg hover:scale-105 transition-transform"
-        >
+        <Link href="/rank" className={`flex flex-col items-center gap-1 px-3 py-2 ${pathname === "/rank" ? "text-primary" : "text-foreground/60"}`}>
+          <RankIcon active={pathname === "/rank"} />
+          <span className="text-xs">Rank</span>
+        </Link>
+
+        <Link href="/post" className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-primary to-accent text-white shadow-lg hover:scale-105 transition-transform">
           <PlusIcon />
         </Link>
 
-        <Link
-          href="/rank"
-          className={`flex flex-col items-center gap-1 px-4 py-2 transition-colors ${
-            pathname === "/rank" ? "text-primary" : "text-foreground/60 hover:text-foreground"
-          }`}
-        >
-          <RankIcon active={pathname === "/rank"} />
-          <span className="text-xs font-medium">Rank</span>
+        <Link href="/profile" className={`flex flex-col items-center gap-1 px-3 py-2 ${pathname === "/profile" ? "text-primary" : "text-foreground/60"}`}>
+          <ProfileIcon active={pathname === "/profile"} />
+          <span className="text-xs">Profile</span>
         </Link>
       </div>
     </nav>

@@ -1,145 +1,85 @@
 "use client";
-
-import { useState, useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
+import { supabase } from "../lib/supabase";
 import Image from "next/image";
 import Link from "next/link";
-import { supabase } from "../lib/supabase";
-
-interface Profile {
-  id: string;
-  username: string;
-  avatar_url: string | null;
-}
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [posts, setPosts] = useState<any[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        // Obtener usuario de la sesión
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-        if (!user) {
-          setError("No hay sesión activa");
-          setIsLoading(false);
-          return;
-        }
+      const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      setProfile(prof);
 
-        console.log("👤 Usuario:", user);
-        console.log("📋 Metadata:", user.user_metadata);
-
-        // Buscar perfil en la tabla profiles
-        const { data: profileData, error: profileError } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
-
-        if (profileError && profileError.code !== "PGRST116") {
-          throw profileError;
-        }
-
-        if (profileData) {
-          setProfile(profileData);
-        } else {
-          // Si no existe perfil, crear uno con datos de metadata
-          setProfile({
-            id: user.id,
-            username: user.user_metadata?.username || "",
-            avatar_url: null,
-          });
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Error al cargar perfil");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProfile();
+      const { data: postsData } = await supabase.from('posts').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+      setPosts(postsData || []);
+    }
+    load();
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-foreground/60">Cargando perfil...</div>
-      </div>
-    );
-  }
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="text-center">
-          <p className="text-red-500 mb-4">{error}</p>
-          <Link
-            href="/auth/login"
-            className="text-primary hover:underline"
-          >
-            Iniciar sesión
-          </Link>
-        </div>
-      </div>
-    );
-  }
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user.id}/avatar-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      const publicUrl = urlData.publicUrl;
+
+      const { error: updateError } = await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', user.id);
+      if (updateError) throw updateError;
+
+      setProfile({...profile, avatar_url: publicUrl });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  if (!profile) return <div className="p-10 text-center">Cargando perfil...</div>;
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-card-bg border-b border-border">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
-          <h1 className="text-xl font-bold bg-linear-to-r from-primary to-accent bg-clip-text text-transparent">
-            Mi Perfil
-          </h1>
-          <Link
-            href="/profile/edit"
-            className="text-sm text-primary hover:underline"
-          >
-            Editar
-          </Link>
-        </div>
-      </header>
-
-      {/* Contenido del perfil */}
-      <main className="max-w-lg mx-auto px-4 py-8">
-        <div className="flex flex-col items-center gap-6">
-          {/* Avatar */}
-          <div className="relative w-32 h-32 rounded-full overflow-hidden ring-4 ring-primary bg-card-bg">
-            {profile?.avatar_url ? (
-              <Image
-                src={profile.avatar_url}
-                alt={profile.username || "Avatar"}
-                fill
-                className="object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-4xl text-foreground/40">
-                {profile?.username?.charAt(0).toUpperCase() || "?"}
-              </div>
-            )}
+    <div className="min-h-screen bg-background pb-20">
+      <div className="max-w-lg mx-auto p-4">
+        <div className="flex items-center gap-4 mt-6">
+          <div className="relative w-20 h-20 rounded-full overflow-hidden bg-gray-200 group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+            {profile.avatar_url && <Image src={profile.avatar_url} alt="avatar" width={80} height={80} className="object-cover w-full h-full" />}
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs">
+              {uploading? "..." : "Cambiar"}
+            </div>
           </div>
-
-          {/* Username */}
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-foreground">
-              @{profile?.username || "sin_usuario"}
-            </h2>
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+          <div>
+            <h2 className="text-xl font-bold">{profile.username}</h2>
+            <p className="text-sm opacity-60">{profile.email}</p>
           </div>
-
-          {/* Botón editar */}
-          <Link
-            href="/profile/edit"
-            className="px-6 py-2 rounded-xl bg-linear-to-r from-primary to-accent text-white font-semibold hover:opacity-90 transition-opacity"
-          >
-            Editar perfil
-          </Link>
+          <Link href="/profile/edit" className="ml-auto px-4 py-1 border rounded-lg text-sm">Editar perfil</Link>
         </div>
-      </main>
+
+        <div className="grid grid-cols-3 gap-1 mt-8">
+          {posts.map((post) => (
+            <div key={post.id} className="aspect-square relative bg-gray-100">
+              <Image src={post.image_url} alt="post" fill className="object-cover" />
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

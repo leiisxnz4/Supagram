@@ -33,7 +33,10 @@ export default function CreatePage() {
   };
 
   const uploadAndCreatePost = async (file: File) => {
-    const userId = "11111111-1111-1111-1111-111111111111";
+    // FIX: Obtener el usuario real logueado, no uno fake
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("No estás logueado");
+    const userId = user.id;
 
     // 1️⃣ Preparar nombre del archivo
     const fileExt = file.name.split(".").pop();
@@ -42,8 +45,8 @@ export default function CreatePage() {
 
     // 2️⃣ Subir al bucket "images"
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("supagram")
-      .upload(filePath, file, {
+     .from("supagram")
+     .upload(filePath, file, {
         cacheControl: "3600",
         upsert: false,
       });
@@ -55,8 +58,8 @@ export default function CreatePage() {
 
     // 3️⃣ Obtener URL pública
     const { data: urlData } = supabase.storage
-      .from("supagram")
-      .getPublicUrl(filePath);
+     .from("supagram")
+     .getPublicUrl(filePath);
 
     const publicUrl = urlData.publicUrl;
 
@@ -64,14 +67,14 @@ export default function CreatePage() {
 
     // 4️⃣ Crear el post en la tabla posts_new
     const { data: postData, error: postError } = await supabase
-      .from("posts")
-      .insert({
+     .from("posts")
+     .insert({
         user_id: userId,
         image_url: publicUrl,
         caption: caption,
         likes: 0,
       })
-      .select("*");
+     .select("*");
 
     if (postError) {
       console.error("❌ Error creando el post:", postError);
@@ -111,7 +114,7 @@ export default function CreatePage() {
     } catch (error) {
       setMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Error al crear el post",
+        text: error instanceof Error? error.message : "Error al crear el post",
       });
     } finally {
       setIsLoading(false);
@@ -134,7 +137,7 @@ export default function CreatePage() {
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           {/* Área de carga de imagen */}
           <div className="flex flex-col gap-2">
-            {imagePreview ? (
+            {imagePreview? (
               <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-card-bg border border-border">
                 <Image
                   src={imagePreview}
@@ -195,7 +198,7 @@ export default function CreatePage() {
                 </span>
               </label>
             )}
-            
+
             <input
               ref={fileInputRef}
               id="image-upload"
@@ -223,7 +226,7 @@ export default function CreatePage() {
             <div
               className={`px-4 py-3 rounded-xl text-sm ${
                 message.type === "success"
-                  ? "bg-green-500/10 text-green-500 border border-green-500/20"
+                 ? "bg-green-500/10 text-green-500 border border-green-500/20"
                   : "bg-red-500/10 text-red-500 border border-red-500/20"
               }`}
             >
@@ -234,10 +237,10 @@ export default function CreatePage() {
           {/* Botón de enviar */}
           <button
             type="submit"
-            disabled={isLoading || !imageFile}
+            disabled={isLoading ||!imageFile}
             className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-primary to-accent text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {isLoading ? (
+            {isLoading? (
               <>
                 <svg
                   className="animate-spin h-5 w-5"
