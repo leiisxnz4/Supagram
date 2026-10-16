@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { supabase } from "../../lib/client";
+import { supabase } from "../../lib/supabase";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");

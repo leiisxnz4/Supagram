@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Post, Comment } from "./types";
-import { supabase } from "./lib/client";
+import { supabase } from "./lib/supabase";
 import PostCard from "./components/PostCard";
 
 

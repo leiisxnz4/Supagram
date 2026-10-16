@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 
-import { supabase } from "../lib/client";
+import { supabase } from "../lib/supabase";
 import { HeartIcon } from "../components/HeartIcon";
 import Modal from "../components/Modal";
 import { Post } from "../types";
